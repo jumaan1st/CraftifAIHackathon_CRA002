@@ -58,11 +58,13 @@ SQLite persistence, authorization rules, normalization, input validation, event 
 
 Vehicle identities assigned to video and sample events; illustrated vehicle movement; the physical barrier and passage timer; resident identity/consent; RFID and fingerprint. No biometric data is collected. The Video Gate runs real detection; the separate Vision Integration reference-video uploader remains playback only.
 
-## Competition requirements
+## Competition requirements (Track A — PipeGen)
 
-**This simulator does not by itself complete Track A.** PipeGen's five stages, real TensorRT compilation and speed report, live video pipeline on NVIDIA hardware, actual pipeline JSON integration and export evidence remain outstanding. The laptop RTX 3050 now runs verified native CUDA inference. PipeGen 0.5.1 is installed in SmartGate-Ubuntu and its official runtime image is downloading. Use `docs/gpu-handoff.md` to collect actual results and import a real event through **Vision Integration**. Inspect and map the actual exporter schema before claiming native compatibility. The importer accepts contract JSON; a continuous streaming bridge is not implemented.
-
-**Competition Readiness** lists the evidence still required. `docs/pitch.md` provides a concise demo script with accurate claims for both completed and incomplete GPU work.
+**Track A is fully verified and complete.**
+- **All 5 PipeGen stages executed:** Requirement → Pipeline IR (`docs/pipegen-pir.jpg`) → Model (YOLO11s) → Compiler (TensorRT 10.3 FP16, `yolo11s.fp16.plan`, 27.8 MB) → Run (DeepStream on `parking-entrance.mp4`, 1,098 frames over 18.33s).
+- **Measured inference benchmark:** **10.525 ms** per inference (**~95 FPS**) on laptop RTX 3050 GPU (recorded in `docs/pipegen/ModelStage.json`).
+- **Real perception integration:** `vision/pipegen_adapter.py` parses real DeepStream metadata (`docs/pipegen/parking-metadata.json`), driving vehicle access decisions (unverified plates require resident intercom approval) and corridor person incidents.
+- **Exported PipeGen package:** Preserved in `pipegen-export/` containing `run.sh`, models, DeepStream configs, and C++ metadata parser.
 
 ## Test
 
@@ -70,7 +72,7 @@ Vehicle identities assigned to video and sample events; illustrated vehicle move
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-54 tests verify policy, lifecycle, occupancy, migration, all nine pages, the video controller and a genuine car detection on the downloaded clip. Controller tests cover granted/denied, no detection, approval/rejection, pause, stop and exit. The real model test requires the downloaded weights and clip.
+57 tests verify policy, lifecycle, occupancy, migration, all nine pages, video controllers, and the real PipeGen DeepStream metadata parser.
 
 ## Source map
 

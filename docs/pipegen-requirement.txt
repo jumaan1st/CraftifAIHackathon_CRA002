@@ -4,9 +4,11 @@ Target: NVIDIA GeForce RTX 3050 Laptop GPU, 4 GB VRAM, NVIDIA Windows driver 572
 
 Input: /home/smartgate/SmartGateAI/input/parking-entrance.mp4, a real H.264 parking-entrance video file. Start with a single stream, batch size 1 and a supported lightweight detector at 640 px or lower, FP16 if supported. Keep memory within this laptop's VRAM.
 
-Detect cars, motorcycles, buses and trucks. Track vehicles with a supported tracker and persistent IDs. Produce JSON metadata with timestamp, tracking ID, vehicle class, confidence and bounding box. Prefer a configured entrance line/zone event or deduplicate vehicle arrivals by track, rather than authorizing every frame.
+Detect people, cars, motorcycles, buses and trucks with one supported lightweight COCO detector. Track vehicles with a supported tracker and persistent IDs. Produce JSON metadata with timestamp, tracking ID, vehicle class, confidence and bounding box. Prefer a configured entrance line/zone event or deduplicate vehicle arrivals by track, rather than authorizing every frame.
 
-Use the supported PipeGen curated pipeline and compatible ONNX model. Compile at least one model into TensorRT and save the actual PipeGen speed report. Complete Requirement, Pipeline IR, Model, Compiler and Run. Export the generated application, configs, models, engine and run.sh.
+A second test video is /home/smartgate/SmartGateAI/input/corridor.mp4 (H.264, 960x506, 4 fps). After the parking run, reuse the same compiled engine on this input to demonstrate person events for the corridor monitor. Camera zone is configured by the operator, not inferred from footage.
+
+Use the supported PipeGen curated pipeline and compatible ONNX model. Prefer a small detector and batch 1, with a memory-bounded TensorRT workspace suitable for 4 GB VRAM. Compile at least one model into TensorRT and save the actual PipeGen speed report. Complete Requirement, Pipeline IR, Model, Compiler and Run. Export the generated application, configs, models, engine and run.sh.
 
 Plate detection/OCR is optional. If not genuinely available, number_plate must be null and the application will request a simulated resident decision. Do not fabricate a plate from the sample registry or relabel detection confidence as OCR confidence.
 

@@ -1,0 +1,435 @@
+{
+  "loop": {
+    "next_file": null,
+    "next_task": null,
+    "projectTree": {},
+    "target_function": {
+      "name": "read_file",
+      "parameters": {}
+    },
+    "visited_steps": [
+      "src1/VehicleDetection/application.py",
+      "models/yolo11s.onnx"
+    ]
+  },
+  "pipeline_ir": {
+    "connections": [
+      [
+        "p01o_frame",
+        "p02i_frame"
+      ],
+      [
+        "p02o_blob",
+        "p03i_blob"
+      ],
+      [
+        "p03o_raw",
+        "p04i_raw"
+      ],
+      [
+        "p02o_geometry",
+        "p04i_geometry"
+      ],
+      [
+        "p04o_detections",
+        "p05i_detections"
+      ],
+      [
+        "p01o_meta",
+        "p05i_meta"
+      ],
+      [
+        "p05o_event",
+        "p06i_event"
+      ]
+    ],
+    "nodes": [
+      {
+        "description": "Decode the complete video and emit frames with timestamps.",
+        "id": 1,
+        "name": "file",
+        "ports": [
+          {
+            "direction": "output",
+            "format": {
+              "color": "BGR",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p01o_frame",
+            "tensor": {
+              "dtype": "uint8",
+              "shape": [
+                2160,
+                3840,
+                3
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p01o_meta",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\npath = 'SmartGateAI/input/parking-entrance.mp4'\ncap = cv2.VideoCapture(path)\nif not cap.isOpened():\n    raise FileNotFoundError(path)\nfps = cap.get(cv2.CAP_PROP_FPS)\nframe_index = 0\ntry:\n    while True:\n        ok, frame = cap.read()\n        if not ok:\n            break\n        measured_ms = cap.get(cv2.CAP_PROP_POS_MSEC)\n        timestamp_s = measured_ms / 1000.0 if measured_ms >= 0 and (measured_ms > 0 or frame_index == 0) else frame_index / (fps if fps > 0 else 59.94)\n        emit('p01o_frame', frame)\n        emit('p01o_meta', {'frame_index': frame_index, 'timestamp_s': timestamp_s})\n        frame_index += 1\nfinally:\n    cap.release()\n    end_stream()",
+        "resolution": [
+          3840,
+          2160
+        ],
+        "type": "input",
+        "url": "file://SmartGateAI/input/parking-entrance.mp4"
+      },
+      {
+        "color_order": "RGB",
+        "description": "Letterbox each BGR frame and normalize RGB model input.",
+        "id": 2,
+        "mean": null,
+        "normalization": 0.00392156862745098,
+        "offset": null,
+        "pad_value": 114,
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": "BGR",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p02i_frame",
+            "tensor": {
+              "dtype": "uint8",
+              "shape": [
+                2160,
+                3840,
+                3
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": "RGB",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p02o_blob",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p02o_geometry",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\nimport numpy as np\n\ndef process(frame):\n    orig_h, orig_w = frame.shape[:2]\n    input_h = input_w = 640\n    ratio = min(input_h / orig_h, input_w / orig_w)\n    new_w, new_h = round(orig_w * ratio), round(orig_h * ratio)\n    resized = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_LINEAR)\n    canvas = np.full((input_h, input_w, 3), 114, dtype=np.uint8)\n    pad_x, pad_y = (input_w - new_w) // 2, (input_h - new_h) // 2\n    canvas[pad_y:pad_y + new_h, pad_x:pad_x + new_w] = resized\n    blob = cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0\n    blob = np.transpose(blob, (2, 0, 1))[None]\n    geometry = {'orig_w': orig_w, 'orig_h': orig_h, 'ratio': ratio, 'pad_x': pad_x, 'pad_y': pad_y}\n    return np.ascontiguousarray(blob), geometry",
+        "resize": [
+          640,
+          640
+        ],
+        "resize_mode": "letterbox",
+        "scale": 0.00392156862745098,
+        "std": null,
+        "type": "preprocess"
+      },
+      {
+        "batchSize": 1,
+        "description": "Run batch-one YOLO11s inference on normalized RGB tensors.",
+        "id": 3,
+        "layout": "NCHW",
+        "model": {
+          "inputs": [
+            {
+              "dtype": "fp32",
+              "name": "images",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          ],
+          "name": "YOLO11s COCO",
+          "outputs": [
+            {
+              "dtype": "fp32",
+              "name": "output0",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          ],
+          "parameter_count": 9485791,
+          "type": "engine",
+          "url": "models/yolo11s.fp16.plan",
+          "source_onnx": "models/yolo11s.onnx"
+        },
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": "RGB",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p03i_blob",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p03o_raw",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          }
+        ],
+        "pseudo_code": "import onnxruntime as ort\nsession = ort.InferenceSession('models/yolo11s.onnx', providers=ort.get_available_providers())\ndef process(blob):\n    return session.run(['output0'], {'images': blob})[0]\n# Deployment compiles this ONNX model for the requested FP16 TensorRT target,\n# batch size one and bounded workspace; the source ONNX input remains float32.",
+        "type": "inference"
+      },
+      {
+        "description": "Decode YOLO boxes, apply classwise NMS, select requested labels.",
+        "id": 4,
+        "label_file_path": null,
+        "num_classes": 80,
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p04i_raw",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p04i_geometry",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p04o_detections",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\nimport numpy as np\nCLASS_NAMES = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush']\nTARGET_IDS = {0, 2, 3, 5, 7}\ndef process(raw, geometry):\n    confidence_threshold, nms_threshold = 0.3, 0.45\n    preds = np.squeeze(raw, 0).T\n    boxes_xywh, scores = preds[:, :4], preds[:, 4:]\n    class_ids = np.argmax(scores, axis=1)\n    confidences = scores[np.arange(scores.shape[0]), class_ids]\n    keep = confidences >= confidence_threshold\n    boxes_xywh, confidences, class_ids = boxes_xywh[keep], confidences[keep], class_ids[keep]\n    if len(boxes_xywh) == 0:\n        return []\n    cx, cy, w, h = boxes_xywh.T\n    ratio, pad_x, pad_y = geometry['ratio'], geometry['pad_x'], geometry['pad_y']\n    orig_w, orig_h = geometry['orig_w'], geometry['orig_h']\n    x1 = np.clip((cx - w / 2 - pad_x) / ratio, 0, orig_w)\n    y1 = np.clip((cy - h / 2 - pad_y) / ratio, 0, orig_h)\n    x2 = np.clip((cx + w / 2 - pad_x) / ratio, 0, orig_w)\n    y2 = np.clip((cy + h / 2 - pad_y) / ratio, 0, orig_h)\n    dets = []\n    for c in np.unique(class_ids):\n        if int(c) not in TARGET_IDS:\n            continue\n        idxs = np.where(class_ids == c)[0]\n        rects = np.stack([x1[idxs], y1[idxs], (x2 - x1)[idxs], (y2 - y1)[idxs]], axis=1)\n        keep_idx = cv2.dnn.NMSBoxes(rects.tolist(), confidences[idxs].tolist(), confidence_threshold, nms_threshold)\n        keep_idx = np.array(keep_idx).flatten() if len(keep_idx) else []\n        for i in keep_idx:\n            oi = idxs[i]\n            dets.append({'box': [float(x1[oi]), float(y1[oi]), float(x2[oi]), float(y2[oi])], 'score': float(confidences[oi]), 'class': int(class_ids[oi]), 'label': CLASS_NAMES[int(class_ids[oi])]})\n    return dets",
+        "task": "detection",
+        "threshold": 0.3,
+        "top_items": null,
+        "type": "postprocess"
+      },
+      {
+        "category": "tracking",
+        "description": "Associate requested detections across frames and emit tracked objects.",
+        "external_assets": [],
+        "id": 5,
+        "inputs": [
+          "detections",
+          "source_metadata"
+        ],
+        "name": "vehicle and person tracking",
+        "outputs": [
+          "frame_event"
+        ],
+        "parameters": {
+          "high_threshold": 0.3,
+          "low_threshold": 0.1,
+          "match_iou_threshold": 0.2,
+          "max_lost_frames": 30,
+          "method": "ByteTrack",
+          "new_track_threshold": 0.3,
+          "notes": "Detector filtering at 0.3 means its output contains no 0.1–0.3 low-score candidates; the ByteTrack second association pass is consequently empty unless upstream filtering is explicitly changed.",
+          "second_match_iou_threshold": 0.5
+        },
+        "placement": {
+          "attach_point": null,
+          "position": "post_nn"
+        },
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p05i_detections",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p05i_meta",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p05o_event",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import numpy as np\nfrom scipy.optimize import linear_sum_assignment\n\n# Persistent per-input ByteTrack state; detection coordinates are original-frame xyxy.\ntracked = []\nlost = []\nnext_track_id = 1\nlast_frame_index = None\nP = 1.0 / 20.0\nV = 1.0 / 160.0\n\ndef measurement(box):\n    x1, y1, x2, y2 = box\n    h = max(float(y2 - y1), 1e-6)\n    return np.array([(x1 + x2) / 2, (y1 + y2) / 2, max(float(x2 - x1), 1e-6) / h, h], dtype=float)\n\ndef initiate(box):\n    z = measurement(box)\n    h = z[3]\n    mean = np.r_[z, np.zeros(4)]\n    std = np.array([2*P*h, 2*P*h, 1e-2, 2*P*h, 10*V*h, 10*V*h, 1e-5, 10*V*h])\n    return mean, np.diag(std**2)\n\ndef predict(track, dt):\n    F = np.eye(8)\n    F[:4, 4:] = np.eye(4) * dt\n    h = max(track['mean'][3], 1e-6)\n    std = np.array([P*h, P*h, 1e-2, P*h, V*h, V*h, 1e-5, V*h])\n    track['mean'] = F @ track['mean']\n    track['cov'] = F @ track['cov'] @ F.T + np.diag(std**2)\n\ndef update(track, det, frame_index):\n    z = measurement(det['box'])\n    h = max(track['mean'][3], 1e-6)\n    R = np.diag(np.array([P*h, P*h, 1e-1, P*h])**2)\n    projected = track['mean'][:4]\n    S = track['cov'][:4, :4] + R\n    K = np.linalg.solve(S, track['cov'][:4, :].T).T\n    track['mean'] += K @ (z - projected)\n    track['cov'] -= K @ S @ K.T\n    track['box'] = det['box']\n    track['det'] = det\n    track['last_seen'] = frame_index\n    track['status'] = 'tracked'\n\ndef iou(a, b):\n    x1, y1 = max(a[0], b[0]), max(a[1], b[1])\n    x2, y2 = min(a[2], b[2]), min(a[3], b[3])\n    intersection = max(0.0, x2-x1) * max(0.0, y2-y1)\n    aa = max(0.0, a[2]-a[0]) * max(0.0, a[3]-a[1])\n    bb = max(0.0, b[2]-b[0]) * max(0.0, b[3]-b[1])\n    return intersection / (aa + bb - intersection) if aa + bb > intersection else 0.0\n\ndef predicted_box(t):\n    x, y, a, h = t['mean'][:4]\n    h = max(h, 1e-6)\n    w = max(a*h, 1e-6)\n    return [x-w/2, y-h/2, x+w/2, y+h/2]\n\ndef associate(pool, detections, minimum_iou):\n    if not pool or not detections:\n        return [], list(range(len(pool))), list(range(len(detections)))\n    costs = np.ones((len(pool), len(detections)), dtype=float)\n    for i, track in enumerate(pool):\n        for j, det in enumerate(detections):\n            if track['class'] == det['class']:\n                costs[i, j] = 1.0 - iou(predicted_box(track), det['box'])\n    rows, cols = linear_sum_assignment(costs)\n    pairs = [(int(i), int(j)) for i, j in zip(rows, cols) if costs[i, j] <= 1.0-minimum_iou]\n    used_i = {i for i, _ in pairs}\n    used_j = {j for _, j in pairs}\n    return pairs, [i for i in range(len(pool)) if i not in used_i], [j for j in range(len(detections)) if j not in used_j]\n\ndef process(detections, source_metadata):\n    global tracked, lost, next_track_id, last_frame_index\n    frame_index = source_metadata['frame_index']\n    timestamp_s = source_metadata['timestamp_s']\n    dt = max(1, frame_index - last_frame_index) if last_frame_index is not None else 1\n    last_frame_index = frame_index\n    pool = tracked + lost\n    for track in pool:\n        predict(track, dt)\n    high = [d for d in detections if d['score'] >= 0.3]\n    low = [d for d in detections if 0.1 <= d['score'] < 0.3]\n    pairs, unmatched_pool, unmatched_high = associate(pool, high, 0.2)\n    active = []\n    for i, j in pairs:\n        update(pool[i], high[j], frame_index)\n        active.append(pool[i])\n    remaining_tracked = [pool[i] for i in unmatched_pool if pool[i]['status'] == 'tracked']\n    second_pairs, unmatched_remaining, _ = associate(remaining_tracked, low, 0.5)\n    for i, j in second_pairs:\n        update(remaining_tracked[i], low[j], frame_index)\n        active.append(remaining_tracked[i])\n    for j in unmatched_high:\n        det = high[j]\n        if det['score'] >= 0.3:\n            mean, cov = initiate(det['box'])\n            active.append({'id': next_track_id, 'class': det['class'], 'mean': mean, 'cov': cov, 'box': det['box'], 'det': det, 'last_seen': frame_index, 'status': 'tracked'})\n            next_track_id += 1\n    active_ids = {t['id'] for t in active}\n    lost = [t for t in pool if t['id'] not in active_ids and frame_index - t['last_seen'] <= 30]\n    for t in lost:\n        t['status'] = 'lost'\n    tracked = active\n    objects = [{'class': t['det']['label'], 'confidence': t['det']['score'], 'bounding_box': t['det']['box'], 'timestamp': timestamp_s, 'tracking_id': t['id'], 'plate': None} for t in tracked if t['last_seen'] == frame_index]\n    return {'frame_index': frame_index, 'timestamp': timestamp_s, 'objects': objects}",
+        "reference_path": null,
+        "runs_every_frame": true,
+        "state_key": "global",
+        "triggers": [],
+        "type": "custom"
+      },
+      {
+        "description": "Write timestamped per-frame JSON events including empty detections.",
+        "grid": null,
+        "id": 6,
+        "name": "json",
+        "output_type": "single",
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 50,
+              "numerator": 2997
+            },
+            "id": "p06i_event",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import json\nfrom pathlib import Path\npath = Path('output/metadata.json')\npath.parent.mkdir(parents=True, exist_ok=True)\nfile = path.open('w', encoding='utf-8')\nfile.write('[\\n')\nfirst = True\ndef process(event):\n    global first\n    if not first:\n        file.write(',\\n')\n    json.dump(event, file, ensure_ascii=False, allow_nan=False)\n    file.flush()\n    first = False\n\ndef on_end_stream():\n    file.write('\\n]\\n')\n    file.close()",
+        "resolution": null,
+        "type": "output",
+        "url": "file://output/metadata.json"
+      }
+    ]
+  }
+}

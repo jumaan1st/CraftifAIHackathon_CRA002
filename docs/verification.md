@@ -20,6 +20,12 @@ Full CUDA sample verification: `docs/gpu-video-verification.json` records 75 dec
 
 Security extension: eight additional tests pass for disarmed safety, person/motion rules, threshold behavior, motion warm-up/static frames and persistent shared-zone incidents. The complete existing 46-test suite also passed after adding the ninth page and configurable detector class mapping.
 
-Final full suite after the security extension: **54 passed in 34.16 seconds**. Browser CUDA monitoring completed the full sample, detected people, saved three motion-alert episodes and displayed the simulated light/alarm response. `docs/security-verification.json` records scope. The narrated product explanation is `docs/SmartGate-mentor-explanation.mp4` (85.53 seconds, H.264 with AAC audio).
+Full suite after PipeGen DeepStream metadata integration: **57 passed in 52.80 seconds** (including `tests/test_pipegen_adapter.py`).
 
-Built-in hallway sample: 104 decoded frames; 103 frames exceeded the default 2% frame-motion threshold. Targeted security and all-page render checks: 9 passed. Stock camera motion contributes to these alerts; no fixed-camera detection accuracy is claimed.
+PipeGen Track A technical verification:
+- 5-stage pipeline run complete (Requirements, Pipeline IR, Model, Compiler, Run).
+- YOLO11s FP16 TensorRT engine compiled (`yolo11s.fp16.plan`, 27.8 MB, 252 layers) with measured 10.525 ms inference (~95 FPS).
+- DeepStream run executed on `parking-entrance.mp4` (1,098 frames over 18.33 seconds), outputting `parking-metadata.json`.
+- Dual-mode adapter in `vision/pipegen_adapter.py` seamlessly maps DeepStream vehicle tracks to SmartGate arrival events and person tracks to the corridor security timeline.
+- Complete exported PipeGen project preserved in `pipegen-export/` with runnable `run.sh`.
+
