@@ -3,9 +3,10 @@ import json
 import sqlite3
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 import smartgate as sg
-from simulation_ui import render_simulator
-from vision.pipegen_adapter import load_events
+from simulation_ui import render_simulator, scene
+from vision.pipegen_adapter import load_events, parse_pipegen_deepstream_metadata
 from video_ui import render_video
 from corridor_ui import render_security
 
@@ -118,27 +119,29 @@ elif page=='Access Logs':
     a.download_button('↓ Download audit CSV',df.to_csv(index=False),'smartgate-audit.csv','text/csv',width='stretch')
     b.download_button('↓ Download audit JSON',json.dumps(filtered,indent=2),'smartgate-audit.json','application/json',width='stretch')
 elif page=='Vision Integration':
-    st.caption('The same authorization and gate services consume real external PipeGen perception events.')
-    st.info('This page imports real PipeGen DeepStream perception metadata. Vehicles are tracked by YOLO11s (FP16 TensorRT). In compliance with hackathon rules, license plate identities are not fabricated: detections arrive as unverified arrivals requiring resident/operator approval.')
+    st.caption('Real edge video perception from CraftifAI PipeGen driving live simulated gate and security actions.')
+    st.info('This page integrates real DeepStream perception metadata (YOLO11s FP16 TensorRT) with the input parking video and synchronized virtual gate. In compliance with hackathon rules, license plates are not fabricated: detections arrive as unverified arrivals requiring resident/operator approval.')
     
     col_a, col_b = st.columns([1, 1])
     pipegen_sample_path = ROOT / 'docs' / 'pipegen' / 'parking-metadata.json'
-    load_real_btn = col_a.button('⚡ Load Verified PipeGen Run (parking-metadata.json)', type='primary', width='stretch')
+    load_real_btn = col_a.button('⚡ Reload Verified PipeGen Run (parking-metadata.json)', type='secondary', width='stretch')
     upload = col_b.file_uploader('Or upload custom pipeline JSON', type=['json'], label_visibility='collapsed')
     
     payload_data = None
-    if load_real_btn or 'pipegen_payload' in st.session_state:
+    if upload:
+        payload_data = upload.getvalue().decode('utf-8')
+    elif load_real_btn or 'pipegen_payload' in st.session_state:
         if load_real_btn:
             st.session_state['pipegen_payload'] = pipegen_sample_path.read_text(encoding='utf-8')
         payload_data = st.session_state.get('pipegen_payload')
-    elif upload:
-        payload_data = upload.getvalue().decode('utf-8')
+    elif pipegen_sample_path.exists():
+        payload_data = pipegen_sample_path.read_text(encoding='utf-8')
+        st.session_state['pipegen_payload'] = payload_data
 
     if payload_data:
         try:
             raw_json = json.loads(payload_data)
             if isinstance(raw_json, dict) and 'frames' in raw_json:
-                from vision.pipegen_adapter import parse_pipegen_deepstream_metadata
                 parsed = parse_pipegen_deepstream_metadata(raw_json)
                 summary = parsed['summary']
                 
@@ -148,9 +151,19 @@ elif page=='Vision Integration':
                 m3.metric('Vehicle Arrivals', summary['vehicles_detected'])
                 m4.metric('Person Detections', summary['persons_detected'])
                 
-                tab_veh, tab_person = st.tabs(['🚗 Vehicle Arrivals (Gate Control)', '🚶 Person Detections (Corridor Security)'])
+                # SIDE-BY-SIDE VIDEO & VIRTUAL GATE (Matching Video Gate layout)
+                left_col, right_col = st.columns([1.5, 1], gap='large')
                 
-                with tab_veh:
+                with left_col:
+                    st.subheader('Video · PipeGen Input Footage')
+                    video_path = ROOT / 'data' / 'videos' / 'parking-entrance.mp4'
+                    if video_path.exists():
+                        st.video(str(video_path))
+                        st.caption('parking-entrance.mp4 · 1,098 frames processed by DeepStream 7.1 + YOLO11s TensorRT (FP16)')
+                    else:
+                        st.info('parking-entrance.mp4 is stored externally as documented.')
+                    
+                    st.markdown('#### 🎯 PipeGen Track Selector')
                     v_events = parsed['vehicles']
                     if v_events:
                         v_idx = st.selectbox(
@@ -159,24 +172,60 @@ elif page=='Vision Integration':
                             format_func=lambda i: f"Track {v_events[i]['tracking_id']} · {v_events[i]['vehicle_type'].upper()} (conf: {v_events[i]['detector_confidence']*100:.1f}%, {v_events[i]['frame_count']} frames)"
                         )
                         selected_v = v_events[v_idx]
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            st.json(selected_v)
-                        with c2:
-                            st.write(f"**Track ID:** `{selected_v['tracking_id']}`")
-                            st.write(f"**Vehicle Type:** `{selected_v['vehicle_type']}`")
-                            st.write(f"**YOLO11s Confidence:** `{selected_v['detector_confidence']*100:.1f}%`")
-                            st.write(f"**First Seen Frame:** `{selected_v['first_frame']}`")
-                            st.write(f"**Plate OCR:** `None (Operator / Resident Verification required)`")
-                            
-                            if st.button('Apply event to gate', type='primary', key='btn_apply_gate'):
+                        bbox = selected_v.get('bbox', {})
+                        st.caption(f"**Bounding Box:** Left: `{bbox.get('left', 0):.1f}`, Top: `{bbox.get('top', 0):.1f}`, Width: `{bbox.get('width', 0):.1f}`, Height: `{bbox.get('height', 0):.1f}` · First Frame: `{selected_v['first_frame']}`")
+                        
+                        if st.button('🚀 Apply PipeGen Vehicle Track to Gate', type='primary', key='btn_apply_gate', width='stretch'):
+                            try:
                                 result = sg.process_event(selected_v)
                                 st.success(f"{result['status']} · {result['reason']}")
-                                st.info('Gate set to PENDING_VERIFICATION. Open Live Simulator to approve and release the barrier!')
+                                st.rerun()
+                            except ValueError as e:
+                                st.warning(str(e))
                     else:
                         st.warning('No vehicle tracks found in this pipeline export.')
                         
-                with tab_person:
+                with right_col:
+                    st.subheader('Virtual Gate · Synchronized')
+                    with sg.connect() as c:
+                        gate = dict(c.execute('SELECT * FROM gate WHERE id=1').fetchone())
+                        inside = sum(not v['exit_time'] for v in c.execute('SELECT * FROM visits').fetchall())
+                    
+                    gate_phase = gate['state'].replace('PENDING_VERIFICATION', 'WAITING')
+                    active_eid = gate.get('event_id') or ''
+                    components.html(scene(phase=gate_phase, plate=active_eid, direction='ENTRY'), height=430)
+                    
+                    c_m1, c_m2 = st.columns(2)
+                    c_m1.metric('Gate state', gate_phase)
+                    c_m2.metric('Vehicles inside', inside)
+                    
+                    if gate['event_id']:
+                        st.warning(f"**Active vehicle:** `{gate['event_id']}`")
+                        st.caption(gate['reason'])
+                        if gate['state'] == 'PENDING_VERIFICATION':
+                            with sg.connect() as c:
+                                apartments = [dict(r) for r in c.execute('SELECT * FROM apartments').fetchall()]
+                            apt = st.selectbox('Approving resident (simulated intercom)', apartments, format_func=lambda a: f"{a['block_name']}-{a['flat_number']} · {a['resident_name']}")
+                            btn_c1, btn_c2 = st.columns(2)
+                            if btn_c1.button('✅ Approve entry', type='primary', width='stretch'):
+                                sg.resolve(gate['event_id'], approve=True, apartment_id=apt['id'])
+                                st.rerun()
+                            if btn_c2.button('❌ Reject entry', width='stretch'):
+                                sg.resolve(gate['event_id'], approve=False, apartment_id=apt['id'])
+                                st.rerun()
+                        elif gate['state'] == 'OPEN':
+                            if st.button('🚘 Complete passage & close barrier', type='primary', width='stretch'):
+                                sg.record_passage(gate['event_id'])
+                                sg.close_gate()
+                                st.rerun()
+                        
+                        if st.button('Cancel / Clear active cycle', width='stretch'):
+                            sg.close_gate()
+                            st.rerun()
+
+                # Person Detections & Corridor Security
+                st.subheader('Corridor & Incident Timeline Link')
+                with st.expander('🚶 View PipeGen Tracked Person Events & Trigger Corridor Alert'):
                     p_events = parsed['persons']
                     if p_events:
                         p_idx = st.selectbox(
@@ -185,27 +234,27 @@ elif page=='Vision Integration':
                             format_func=lambda i: f"Person Track {p_events[i]['tracking_id']} (conf: {p_events[i]['detector_confidence']*100:.1f}%, {p_events[i]['frame_count']} frames)"
                         )
                         selected_p = p_events[p_idx]
-                        cp1, cp2 = st.columns(2)
-                        with cp1:
-                            st.json(selected_p)
-                        with cp2:
-                            st.write(f"**Person Track ID:** `{selected_p['tracking_id']}`")
-                            st.write(f"**YOLO11s Confidence:** `{selected_p['detector_confidence']*100:.1f}%`")
-                            st.write(f"**First Frame:** `{selected_p['first_frame']}`")
-                            
-                            if st.button('🚨 Trigger Corridor Security Alert with this detection', key='btn_corridor_alert'):
-                                import corridor_ui
-                                sec = float(selected_p.get('pts_ns', 0)) / 1e9 if selected_p.get('pts_ns') else 1.5
-                                corridor_ui.incident(
-                                    zone='Private Corridor',
-                                    trigger=f"PipeGen YOLO11s Person Track #{selected_p['tracking_id']}",
-                                    seconds=round(sec, 2),
-                                    people=1,
-                                    motion=18.5,
-                                    backend='PipeGen DeepStream'
-                                )
-                                st.success(f"Security incident logged for Person Track #{selected_p['tracking_id']}!")
-                                st.info('Open "Private Corridor & CCTV" tab to see the active alert, safety light, and soft alarm.')
+                        if st.button('🚨 Trigger Corridor Security Alert with this detection', key='btn_corridor_alert'):
+                            import corridor_ui
+                            sec = float(selected_p.get('pts_ns', 0)) / 1e9 if selected_p.get('pts_ns') else 1.5
+                            corridor_ui.incident(
+                                zone='Private Corridor',
+                                trigger=f"PipeGen YOLO11s Person Track #{selected_p['tracking_id']}",
+                                seconds=round(sec, 2),
+                                people=1,
+                                motion=18.5,
+                                backend='PipeGen DeepStream'
+                            )
+                            st.success(f"Security incident logged for Person Track #{selected_p['tracking_id']}! Safety light and soft alarm active.")
+                    else:
+                        st.info('No person tracks found.')
+                        
+                st.subheader('Access Decisions & Audit Log')
+                with sg.connect() as c:
+                    events = [dict(r) for r in c.execute('SELECT * FROM access_events ORDER BY id DESC LIMIT 10').fetchall()]
+                if events:
+                    df = pd.DataFrame(events)[['timestamp', 'event_id', 'event_type', 'authorization_status', 'reason', 'source']]
+                    st.dataframe(df, hide_index=True, width='stretch')
             else:
                 events = load_events(payload_data)
                 index = st.selectbox('Select event', range(len(events)), format_func=lambda i: events[i]['event_id'])
