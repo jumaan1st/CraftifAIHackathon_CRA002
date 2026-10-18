@@ -61,10 +61,16 @@ Vehicle identities assigned to video and sample events; illustrated vehicle move
 ## Competition requirements (Track A — PipeGen)
 
 **Track A is fully verified and complete.**
-- **All 5 PipeGen stages executed:** Requirement → Pipeline IR (`docs/pipegen-pir.jpg`) → Model (YOLO11s) → Compiler (TensorRT 10.3 FP16, `yolo11s.fp16.plan`, 27.8 MB) → Run (DeepStream on `parking-entrance.mp4`, 1,098 frames over 18.33s).
+- **All 5 PipeGen stages executed:** Requirement → Pipeline IR → Model (YOLO11s) → Compiler (TensorRT 10.3 FP16, `yolo11s.fp16.plan`, 27.8 MB) → Run (DeepStream on `parking-entrance.mp4`, 1,098 frames over 18.33s).
 - **Measured inference benchmark:** **10.525 ms** per inference (**~95 FPS**) on laptop RTX 3050 GPU (recorded in `docs/pipegen/ModelStage.json`).
 - **Real perception integration:** `vision/pipegen_adapter.py` parses real DeepStream metadata (`docs/pipegen/parking-metadata.json`), driving vehicle access decisions (unverified plates require resident intercom approval) and corridor person incidents.
 - **Exported PipeGen package:** Preserved in `pipegen-export/` containing `run.sh`, models, DeepStream configs, and C++ metadata parser.
+
+### PipeGen Pipeline IR (Node Graph)
+![PipeGen Pipeline IR Node Graph](docs/pipegen-pir.jpg)
+
+### SmartGate AI Live Execution
+![Video Gate Running with PipeGen Perception](docs/video-barrier-open.jpg)
 
 ## Test
 
@@ -72,7 +78,7 @@ Vehicle identities assigned to video and sample events; illustrated vehicle move
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-57 tests verify policy, lifecycle, occupancy, migration, all nine pages, video controllers, and the real PipeGen DeepStream metadata parser.
+58 tests verify policy, lifecycle, occupancy, migration, all nine pages, video controllers, and the real PipeGen DeepStream metadata parser.
 
 ## Source map
 
