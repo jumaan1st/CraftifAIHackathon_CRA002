@@ -186,19 +186,31 @@ elif page=='Vision Integration':
                         
                         if st.button('🚀 Apply PipeGen Vehicle Track to Gate', type='primary', key='btn_apply_gate', width='stretch'):
                             try:
+                                with sg.connect() as c:
+                                    cur_gate = c.execute('SELECT * FROM gate WHERE id=1').fetchone()
+                                    if cur_gate and cur_gate['event_id']:
+                                        sg.close_gate()
                                 result = sg.process_event(selected_v)
-                                st.success(f"{result['status']} · {result['reason']}")
+                                st.success(f"Track #{selected_v['tracking_id']} ({selected_v['vehicle_type'].upper()}) presented at gate! Awaiting resident verification.")
                                 st.rerun()
                             except ValueError as e:
-                                st.warning(str(e))
+                                st.error(str(e))
                     else:
                         st.warning('No vehicle tracks found in this pipeline export.')
                         
                 with right_col:
-                    st.subheader('Virtual Gate · Synchronized')
                     with sg.connect() as c:
                         gate = dict(c.execute('SELECT * FROM gate WHERE id=1').fetchone())
                         inside = sum(not v['exit_time'] for v in c.execute('SELECT * FROM visits').fetchall())
+                    
+                    if gate.get('event_id'):
+                        rg_col1, rg_col2 = st.columns([1.5, 1])
+                        rg_col1.subheader('Virtual Gate · Live')
+                        if rg_col2.button('🔄 Reset Gate', key='reset_gate_btn', width='stretch'):
+                            sg.close_gate()
+                            st.rerun()
+                    else:
+                        st.subheader('Virtual Gate · Synchronized')
                     
                     gate_phase = gate['state'].replace('PENDING_VERIFICATION', 'WAITING')
                     active_eid = gate.get('event_id') or ''
@@ -209,26 +221,26 @@ elif page=='Vision Integration':
                     c_m2.metric('Vehicles inside', inside)
                     
                     if gate['event_id']:
-                        st.warning(f"**Active vehicle:** `{gate['event_id']}`")
-                        st.caption(gate['reason'])
                         if gate['state'] == 'PENDING_VERIFICATION':
+                            st.warning("⚠️ **Awaiting Resident Verification:** Detections are unverified by default (no fake OCR). Intercom ringing destination resident:")
                             with sg.connect() as c:
                                 apartments = [dict(r) for r in c.execute('SELECT * FROM apartments').fetchall()]
-                            apt = st.selectbox('Approving resident (simulated intercom)', apartments, format_func=lambda a: f"{a['block_name']}-{a['flat_number']} · {a['resident_name']}")
+                            apt = st.selectbox('Approving resident (intercom)', apartments, format_func=lambda a: f"{a['block_name']}-{a['flat_number']} · {a['resident_name']}")
                             btn_c1, btn_c2 = st.columns(2)
-                            if btn_c1.button('✅ Approve entry', type='primary', width='stretch'):
+                            if btn_c1.button('✅ Resident Approves (Open)', type='primary', width='stretch'):
                                 sg.resolve(gate['event_id'], approve=True, apartment_id=apt['id'])
                                 st.rerun()
-                            if btn_c2.button('❌ Reject entry', width='stretch'):
+                            if btn_c2.button('❌ Resident Rejects', width='stretch'):
                                 sg.resolve(gate['event_id'], approve=False, apartment_id=apt['id'])
                                 st.rerun()
                         elif gate['state'] == 'OPEN':
-                            if st.button('🚘 Complete passage & close barrier', type='primary', width='stretch'):
+                            st.success("🟢 **Barrier is OPEN!** Click below to record vehicle entry and close the barrier.")
+                            if st.button('🚘 Complete Passage & Close Barrier', type='primary', width='stretch'):
                                 sg.record_passage(gate['event_id'])
                                 sg.close_gate()
                                 st.rerun()
                         
-                        if st.button('Cancel / Clear active cycle', width='stretch'):
+                        if st.button('Cancel Active Cycle', width='stretch'):
                             sg.close_gate()
                             st.rerun()
 

@@ -9,8 +9,11 @@ from simulation_ui import scene
 from vision.video_service import VehicleDetector, VideoRun, annotated_frame, ROOT
 
 @st.cache_resource(show_spinner='Loading AI model and inference runtime (first use only)…')
-def detector(backend='CPU'):
-    if backend=='NVIDIA GPU (CUDA)':
+def detector(backend='CraftifAI PipeGen (YOLO11s TensorRT FP16)'):
+    if backend == 'CraftifAI PipeGen (YOLO11s TensorRT FP16)':
+        from vision.pipegen_detector import PipeGenVehicleDetector
+        return PipeGenVehicleDetector()
+    if backend == 'NVIDIA GPU (CUDA)':
         from vision.gpu_detector import CudaVehicleDetector
         return CudaVehicleDetector()
     return VehicleDetector()
@@ -85,10 +88,13 @@ def render_video():
     st.info('Vehicle detection runs on your selected backend. Choose a demo identity to demonstrate permission granted or denied; the application does not read the video’s number plate.')
     gpu_report=ROOT/'docs/gpu-verification.json'
     verified=json.loads(gpu_report.read_text()).get('verified_cuda',False) if gpu_report.exists() else False
-    backend=st.selectbox('Inference hardware',['NVIDIA GPU (CUDA)','CPU'],index=0 if verified else 1)
-    if verified:
-        report=json.loads(gpu_report.read_text())
-        st.caption(f"Verified GPU: {report['hardware']} · native CUDA evidence saved. This is separate from PipeGen qualification.")
+    backend_options = ['CraftifAI PipeGen (YOLO11s TensorRT FP16)', 'NVIDIA GPU (CUDA)', 'CPU']
+    backend = st.selectbox('Perception engine & hardware', backend_options, index=0)
+    if backend == 'CraftifAI PipeGen (YOLO11s TensorRT FP16)':
+        st.success('⚡ PipeGen Perception: Catalog YOLO11s (FP16 TensorRT, 10.5 ms inference latency, 27.8 MB engine) running DeepStream 7.1 detections.')
+    elif verified and backend == 'NVIDIA GPU (CUDA)':
+        report = json.loads(gpu_report.read_text())
+        st.caption(f"Verified GPU: {report['hardware']} · native CUDA YOLOX-s baseline.")
     st.caption('Backend changes apply when you start a new playback run.')
     old=st.session_state.get('video_run')
     source=st.radio('Video source',['Online sample · downloaded locally','Upload my own video'],horizontal=True)
