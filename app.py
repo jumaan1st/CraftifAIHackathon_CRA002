@@ -156,12 +156,21 @@ elif page=='Vision Integration':
                 
                 with left_col:
                     st.subheader('Video · PipeGen Input Footage')
-                    video_path = ROOT / 'data' / 'videos' / 'parking-entrance.mp4'
-                    if video_path.exists():
-                        st.video(str(video_path))
-                        st.caption('parking-entrance.mp4 · 1,098 frames processed by DeepStream 7.1 + YOLO11s TensorRT (FP16)')
+                    v_src = st.radio('Video Source', ['Verified parking entrance footage', 'Upload my own MP4 video'], horizontal=True, key='vision_video_src')
+                    if v_src == 'Upload my own MP4 video':
+                        custom_mp4 = st.file_uploader('Upload MP4 / WebM video file', type=['mp4', 'webm', 'mov'], key='custom_vision_mp4')
+                        if custom_mp4:
+                            st.video(custom_mp4)
+                            st.caption(f'Playing custom video: {custom_mp4.name}')
+                        else:
+                            st.info('Select and upload any MP4 video file above.')
                     else:
-                        st.info('parking-entrance.mp4 is stored externally as documented.')
+                        video_path = ROOT / 'data' / 'videos' / 'parking-entrance.mp4'
+                        if video_path.exists():
+                            st.video(str(video_path))
+                            st.caption('parking-entrance.mp4 · 1,098 frames processed by DeepStream 7.1 + YOLO11s TensorRT (FP16)')
+                        else:
+                            st.info('parking-entrance.mp4 is stored externally as documented.')
                     
                     st.markdown('#### 🎯 PipeGen Track Selector')
                     v_events = parsed['vehicles']
