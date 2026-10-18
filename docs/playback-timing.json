@@ -1,0 +1,7 @@
+{
+  "scope": "Browser timing on built-in parking sample with cached CUDA detector",
+  "first_processed_frame_seconds": 0.597,
+  "gate_open_to_closed_seconds_approximate": 4,
+  "gate_timing_precision": "Audit timestamps have one-second resolution",
+  "result": "Gate closed and entry saved"
+}

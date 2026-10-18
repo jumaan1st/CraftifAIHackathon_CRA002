@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520">
+<rect width="1000" height="520" fill="#142236"/><path d="M290 520L430 130H570L780 520" fill="#22364b"/>
+<g fill="#284059" stroke="#3a5672" stroke-width="3"><rect x="50" y="60" width="250" height="270" rx="6"/><rect x="710" y="60" width="230" height="270" rx="6"/></g>
+<g fill="#5ee5c4" opacity=".5"><path d="M80 95H120V135H80ZM150 95H190V135H150ZM220 95H260V135H220ZM80 165H120V205H80ZM150 165H190V205H150ZM220 165H260V205H220ZM750 95H790V135H750ZM830 95H870V135H830ZM750 165H790V205H750ZM830 165H870V205H830Z"/></g>
+<path d="M500 150V490" stroke="#7890a7" stroke-width="5" stroke-dasharray="25 25"/>
+<rect x="330" y="260" width="30" height="130" rx="5" fill="#8497ab"/><rect x="348" y="265" width="330" height="18" rx="4" fill="#ffd079"/>
+<g transform="translate(430 350)"><rect width="155" height="95" rx="20" fill="#4b8eaf"/><path d="M25 0L40 -35H110L130 0" fill="#6da9c3"/><rect x="43" y="52" width="70" height="21" rx="3" fill="#e4edf4"/></g>
+<text x="40" y="475" fill="#b2c5d6" font-family="sans-serif" font-size="19">STATIC ENTRANCE ILLUSTRATION · NO LIVE INFERENCE</text></svg>

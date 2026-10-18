@@ -1,0 +1,13 @@
+{
+  "collected_at": "2026-10-18T09:37:15.405431+00:00",
+  "package": "PipeGen_0.5.1_amd64.deb",
+  "bytes": 88214664,
+  "sha256": "fda8e0d45423f14929c291d054ef6e5d01f1e0c1586536c5b2779777efe6586c",
+  "distribution": "SmartGate-Ubuntu",
+  "installed_version": "0.5.1",
+  "runtime_image": "craftifaidocker/deepstream:7.1-amd64-v3",
+  "runtime_status": "download complete; unpacking runtime image",
+  "five_stage_run_complete": false,
+  "launcher_adjustment": "Check docker info exit status instead of nonempty stderr. Restricted mounts: /opt/PipeGen, dedicated SmartGateAI and .pipegen directories, X11 socket. Removed host networking and broad /dev and /home binds.",
+  "status_checked_at": "2026-10-18T11:16:20.042086+00:00"
+}

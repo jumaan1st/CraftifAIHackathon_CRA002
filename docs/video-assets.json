@@ -1,0 +1,20 @@
+[
+  {
+    "path": "models/yolov4-tiny.cfg",
+    "url": "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg",
+    "bytes": 3231,
+    "sha256": "f858e3724962eedf3ac44e3b6cb3f0c3d9ed067c306bb831f539c578b924c90e"
+  },
+  {
+    "path": "models/yolov4-tiny.weights",
+    "url": "https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights",
+    "bytes": 24251276,
+    "sha256": "cf9fbfd0f6d4869b35762f56100f50ed05268084078805f0e7989efe5bb8ca87"
+  },
+  {
+    "path": "data/videos/parking-entrance.mp4",
+    "url": "https://videos.pexels.com/video-files/37508953/15891531_3840_2160_60fps.mp4",
+    "bytes": 39974512,
+    "sha256": "29c4b1c3c30d1a91ea57a7faafbb60316c8fc7606c4e20cb762840c65de72d8b"
+  }
+]

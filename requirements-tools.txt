@@ -1,0 +1,2 @@
+# Optional: regenerate the mentor explanation video
+imageio-ffmpeg==0.6.0

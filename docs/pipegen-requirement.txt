@@ -1,0 +1,15 @@
+SmartGate AI — vehicle arrival detection and tracking for apartment access
+
+Target: NVIDIA GeForce RTX 3050 Laptop GPU, 4 GB VRAM, NVIDIA Windows driver 572.60, Ubuntu 22.04 under WSL2, X11 display :0. Docker and NVIDIA Container Toolkit are installed inside this distribution.
+
+Input: /home/smartgate/SmartGateAI/input/parking-entrance.mp4, a real H.264 parking-entrance video file. Start with a single stream, batch size 1 and a supported lightweight detector at 640 px or lower, FP16 if supported. Keep memory within this laptop's VRAM.
+
+Detect cars, motorcycles, buses and trucks. Track vehicles with a supported tracker and persistent IDs. Produce JSON metadata with timestamp, tracking ID, vehicle class, confidence and bounding box. Prefer a configured entrance line/zone event or deduplicate vehicle arrivals by track, rather than authorizing every frame.
+
+Use the supported PipeGen curated pipeline and compatible ONNX model. Compile at least one model into TensorRT and save the actual PipeGen speed report. Complete Requirement, Pipeline IR, Model, Compiler and Run. Export the generated application, configs, models, engine and run.sh.
+
+Plate detection/OCR is optional. If not genuinely available, number_plate must be null and the application will request a simulated resident decision. Do not fabricate a plate from the sample registry or relabel detection confidence as OCR confidence.
+
+The JSON output is load-bearing: it must trigger SmartGate's access workflow, which logs the decision and operates a simulated gate. The existing dashboard runs on Windows at http://127.0.0.1:8501. Its integration contract is documented in docs/architecture.md. Inspect actual generated JSON before mapping fields; do not claim a native adapter is verified without this test.
+
+Evidence to retain: actual PIR graph screenshot, actual TensorRT speed report screenshot, complete export folder, hardware/model/precision details, live video run evidence and a real output event driving SmartGate's audit log. Physical gate actuation and resident identity/consent remain simulated. Do not claim a FirmGen closed-loop hardware bonus.

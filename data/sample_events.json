@@ -1,0 +1,7 @@
+[
+  {"event_id":"sample-active-1","source":"sample","tracking_id":12,"vehicle_type":"car","number_plate":"KA01AB1234","confidence":null},
+  {"event_id":"sample-unknown-1","source":"sample","tracking_id":13,"vehicle_type":"car","number_plate":"KA09ZZ9999","confidence":null},
+  {"event_id":"sample-revoked-1","source":"sample","tracking_id":14,"vehicle_type":"car","number_plate":"KA05JK7890","confidence":null},
+  {"event_id":"sample-unreadable-1","source":"sample","tracking_id":15,"vehicle_type":"car","number_plate":null,"confidence":null},
+  {"event_id":"sample-delivery-1","source":"sample","tracking_id":16,"vehicle_type":"motorcycle","number_plate":"KA07DL4567","confidence":null,"visit_type":"delivery"}
+]

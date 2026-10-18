@@ -1,0 +1,54 @@
+{
+  "CUDAExecutionProvider": {
+    "mean_ms": 40.059320005821064,
+    "median_ms": 40.510149992769584,
+    "iterations": 10,
+    "detections": [
+      {
+        "vehicle_type": "car",
+        "confidence": 0.9182153344154358,
+        "box": [
+          115,
+          276,
+          327,
+          220
+        ]
+      }
+    ],
+    "providers": [
+      "CUDAExecutionProvider",
+      "CPUExecutionProvider"
+    ]
+  },
+  "profile_node_executions": {
+    "CUDAExecutionProvider": 2639
+  },
+  "profile_file": "data\\gpu_profiles\\onnx-cuda_2026-10-18_14-54-48_668.json",
+  "CPUExecutionProvider": {
+    "mean_ms": 319.88312000758015,
+    "median_ms": 283.34605001145974,
+    "iterations": 10,
+    "detections": [
+      {
+        "vehicle_type": "car",
+        "confidence": 0.9182151556015015,
+        "box": [
+          115,
+          276,
+          327,
+          220
+        ]
+      }
+    ],
+    "providers": [
+      "CPUExecutionProvider"
+    ]
+  },
+  "verified_cuda": true,
+  "hardware": "NVIDIA GeForce RTX 3050 Laptop GPU, 572.60, 4096 MiB",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "model": "OpenCV Zoo YOLOX-s FP32 ONNX",
+  "model_sha256": "c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063",
+  "scope": "Native Windows CUDA inference; not a PipeGen run or TensorRT compilation",
+  "measurement": "preprocess + inference + postprocess, same sampled video frame, 3 warmups then 10 timed iterations"
+}

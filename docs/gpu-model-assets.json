@@ -1,0 +1,14 @@
+[
+  {
+    "path": "models/object_detection_yolox_2022nov.onnx",
+    "source": "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/object_detection_yolox/object_detection_yolox_2022nov.onnx",
+    "bytes": 35858002,
+    "sha256": "c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063"
+  },
+  {
+    "path": "models/YOLOX-LICENSE",
+    "source": "https://raw.githubusercontent.com/opencv/opencv_zoo/main/models/object_detection_yolox/LICENSE",
+    "bytes": 11371,
+    "sha256": "0ec3668d3274bcf29e8a29e9576d5a2cd96fc78d3c5bec4387355a796e5d9088"
+  }
+]

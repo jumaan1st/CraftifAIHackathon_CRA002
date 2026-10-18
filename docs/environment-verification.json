@@ -1,0 +1,43 @@
+{
+  "collected_at": "2026-10-18T08:49:26.628473+00:00",
+  "distribution": "SmartGate-Ubuntu",
+  "scope": "Environment prerequisites only; PipeGen stages and TensorRT are not completed",
+  "checks": {
+    "ubuntu": {
+      "command": "cat /etc/os-release",
+      "exit_code": 0,
+      "stdout": "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"22.04\"\nVERSION=\"22.04.5 LTS (Jammy Jellyfish)\"\nVERSION_CODENAME=jammy\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=jammy",
+      "stderr": ""
+    },
+    "docker": {
+      "command": "docker version --format \"{{.Server.Version}}\"",
+      "exit_code": 0,
+      "stdout": "29.1.3",
+      "stderr": ""
+    },
+    "toolkit": {
+      "command": "nvidia-ctk --version",
+      "exit_code": 0,
+      "stdout": "NVIDIA Container Toolkit CLI version 1.20.1\ncommit: dffc40b4f820ce5c512633bac9e0418d0e05a2ee",
+      "stderr": ""
+    },
+    "container_gpu": {
+      "command": "docker run --rm --gpus all ubuntu:22.04 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader",
+      "exit_code": 0,
+      "stdout": "NVIDIA GeForce RTX 3050 Laptop GPU, 572.60, 4096 MiB",
+      "stderr": ""
+    },
+    "x11": {
+      "command": "xdpyinfo -display :0 | head -n 8",
+      "exit_code": 0,
+      "stdout": "name of display:    :0\nversion number:    11.0\nvendor string:    Microsoft Corporation\nvendor release number:    12010000\nmaximum request size:  16777212 bytes\nmotion buffer size:  256\nbitmap unit, bit order, padding:    32, LSBFirst, 32\nimage byte order:    LSBFirst",
+      "stderr": ""
+    },
+    "linux_user": {
+      "command": "id",
+      "exit_code": 0,
+      "stdout": "uid=1000(smartgate) gid=1000(smartgate) groups=1000(smartgate),118(docker)",
+      "stderr": ""
+    }
+  }
+}

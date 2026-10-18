@@ -1,0 +1,49 @@
+{
+  "scope": "Full decoded sample on CUDA with deterministic software gate timer; isolated temporary database; not PipeGen/TensorRT",
+  "runs": [
+    {
+      "direction": "ENTRY",
+      "plate": "KA01AB1234",
+      "phase": "COMPLETE",
+      "frames": 75,
+      "detected_samples": 71,
+      "event_id": "video-2e2619b2c9c541a29649e152d5cefe42",
+      "events": [
+        "GATE_CLOSED",
+        "VEHICLE_ENTERED",
+        "GATE_OPENED",
+        "ACCESS_DECISION",
+        "VEHICLE_DETECTED"
+      ]
+    },
+    {
+      "direction": "EXIT",
+      "plate": "KA01AB1234",
+      "phase": "COMPLETE",
+      "frames": 75,
+      "detected_samples": 71,
+      "event_id": "video-cd6cbb14eb5c407eb45d8fff33105417",
+      "events": [
+        "GATE_CLOSED",
+        "VEHICLE_EXITED",
+        "GATE_OPENED",
+        "ACCESS_DECISION",
+        "VEHICLE_DETECTED"
+      ]
+    },
+    {
+      "direction": "ENTRY",
+      "plate": "KA05JK7890",
+      "phase": "REJECTED",
+      "frames": 75,
+      "detected_samples": 71,
+      "event_id": "video-5240b41d0c5d4386b55e38d1d11128b6",
+      "events": [
+        "GATE_CLOSED",
+        "ACCESS_DECISION",
+        "VEHICLE_DETECTED"
+      ]
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,14 @@
+{
+  "scope": "Browser verification using existing parking sample in security monitor; footage is not a real private corridor",
+  "backend": "NVIDIA GPU (CUDA)",
+  "observed_people": true,
+  "motion_alert_episodes": 3,
+  "persistent_incidents_verified": true,
+  "simulated_outputs": [
+    "visual alarm",
+    "safety light",
+    "security desk status"
+  ],
+  "physical_camera_or_siren_connected": false,
+  "explanation_video_seconds": 85.53
+}

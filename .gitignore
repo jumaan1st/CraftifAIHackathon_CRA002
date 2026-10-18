@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+data/*.db*
+data/uploads/
+data/video_reports/
+models/*.weights
+data/videos/
+data/gpu_profiles/
+data/setup/
+data/wsl/
+SmartGate-AI-source.zip
