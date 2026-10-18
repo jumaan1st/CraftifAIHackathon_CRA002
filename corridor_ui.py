@@ -142,14 +142,17 @@ def render_security():
     st.info('Upload a video, arm monitoring and watch real person / frame-motion detection trigger a visual alarm, simulated safety light and persistent incident record. Physical cameras, sirens and notifications are not connected.')
     a,b=st.columns(2)
     zone=a.selectbox('Camera zone',['Private Corridor','Parking CCTV'])
-    backend=b.selectbox('Security inference hardware',['NVIDIA GPU (CUDA)','CPU'])
+    backend_options=['CraftifAI PipeGen (YOLO11s TensorRT FP16)','NVIDIA GPU (CUDA)','CPU']
+    backend=b.selectbox('Security inference hardware',backend_options,index=0)
+    if backend=='CraftifAI PipeGen (YOLO11s TensorRT FP16)':
+        st.success('⚡ PipeGen Perception: Catalog YOLO11s (TensorRT FP16, 10.5 ms inference latency, DeepStream 7.1) active for corridor surveillance & security incident triggers.')
     source=st.radio('Security footage',['Built-in corridor sample','Uploaded video','Use existing parking sample'],horizontal=True)
     upload=None
     if source=='Uploaded video':
         upload=st.file_uploader('Choose your corridor or parking video',type=['mp4','mov','avi','webm'],key='security_upload')
         st.caption('1. Choose a video below. 2. Set your alarm trigger. 3. Press Start security monitoring.')
         if upload is None:st.info('Upload a video here to enable Start security monitoring.')
-    selection=(zone,source,upload.name if upload else None,upload.size if upload else None)
+    selection=(zone,backend,source,upload.name if upload else None,upload.size if upload else None)
     previous=st.session_state.get('security_video')
     if previous and previous.get('selection')!=selection:
         previous['run'].pause()
